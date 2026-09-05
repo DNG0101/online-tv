@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#111417">
+    <meta name="description" content="A browser-based IPTV playlist player for GitHub Pages.">
+    <title>Streamdeck IPTV</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ff7a45'/%3E%3Cpath d='M18 19h28v7H37v20h-9V26H18z' fill='white'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="./" aria-label="Streamdeck IPTV home">
+          <span class="brand-mark" aria-hidden="true">▶</span>
+          <span>
+            <strong>STREAMDECK</strong>
+            <small>IPTV PLAYER</small>
+          </span>
+        </a>
+        <div class="topbar-actions">
+          <button class="icon-button" id="themeToggle" type="button" title="Toggle theme" aria-label="Toggle theme">☼</button>
+          <button class="icon-button" id="aboutButton" type="button" title="About this player" aria-label="About this player">i</button>
+        </div>
+      </header>
+
+      <main class="main-content">
+        <section class="playlist-bar panel" aria-labelledby="playlistHeading">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">NETWORK LIBRARY</p>
+              <h1 id="playlistHeading">Open a playlist</h1>
+            </div>
+            <div class="connection-state" id="connectionState" data-state="idle">
+              <span class="status-dot"></span><span id="connectionText">Ready</span>
+            </div>
+          </div>
+          <form class="playlist-form" id="playlistForm">
+            <label class="sr-only" for="playlistUrl">Playlist URL</label>
+            <input id="playlistUrl" name="playlistUrl" type="url" inputmode="url" autocomplete="off"
+              value="https://iptv-org.github.io/iptv/index.m3u"
+              placeholder="https://example.com/playlist.m3u" required>
+            <button class="button button-primary" id="loadPlaylistButton" type="submit">
+              <span class="button-icon">↻</span> Load playlist
+            </button>
+            <button class="button button-quiet" id="resetPlaylistButton" type="button">Reset</button>
+            <label class="button button-quiet file-button" for="playlistFile">
+              Open file
+              <input id="playlistFile" type="file" accept=".m3u,.m3u8,.txt,audio/x-mpegurl,application/vnd.apple.mpegurl,text/plain">
+            </label>
+          </form>
+          <div class="progress-wrap" id="playlistProgress" hidden>
+            <div class="progress-bar"><span></span></div>
+            <span id="progressText">Loading playlist…</span>
+          </div>
+          <p class="helper-text">The default library loads automatically. If a remote playlist blocks CORS, download it and use <strong>Open file</strong>; no server-side proxy is used.</p>
+        </section>
+
+        <section class="workspace">
+          <div class="player-column">
+            <article class="player-card panel" aria-labelledby="playerTitle">
+              <div class="player-screen" id="playerScreen">
+                <video id="videoPlayer" controls playsinline preload="metadata" aria-label="Selected channel player"></video>
+                <div class="player-empty" id="playerEmpty">
+                  <div class="empty-orb">▶</div>
+                  <p class="eyebrow">READY TO PLAY</p>
+                  <h2>Select a channel</h2>
+                  <p>Choose a channel from the directory to start a browser playback attempt.</p>
+                </div>
+                <div class="player-loading" id="playerLoading" hidden>
+                  <span class="spinner"></span>
+                  <span id="playerLoadingText">Connecting to stream…</span>
+                </div>
+              </div>
+              <div class="player-info">
+                <div class="now-playing">
+                  <div class="channel-logo large" id="playerLogo"><span>TV</span></div>
+                  <div class="now-playing-copy">
+                    <p class="eyebrow" id="playerEyebrow">NO CHANNEL SELECTED</p>
+                    <h2 id="playerTitle">Choose a channel to begin</h2>
+                    <p id="playerMeta">Browser-compatible HLS, MP4 and WebM streams are supported.</p>
+                  </div>
+                </div>
+                <div class="player-actions">
+                  <button class="small-button" id="retryButton" type="button" disabled>↻ Retry</button>
+                  <button class="small-button" id="copyUrlButton" type="button" disabled>▣ Copy URL</button>
+                </div>
+              </div>
+              <div class="error-banner" id="playerMessage" role="status" hidden>
+                <span class="message-icon">!</span>
+                <div><strong id="playerMessageTitle">Playback notice</strong><p id="playerMessageText"></p></div>
+                <button class="dismiss-button" id="dismissMessage" type="button" aria-label="Dismiss message">×</button>
+              </div>
+            </article>
+
+            <div class="disclaimer">
+              <span>ⓘ</span>
+              <p>This is a playlist and player interface. Channels and streams are hosted by external providers; availability and browser compatibility vary.</p>
+            </div>
+
+            <details class="diagnostics panel">
+              <summary>Playback diagnostics</summary>
+              <div class="diagnostic-grid" id="diagnosticsGrid"></div>
+            </details>
+          </div>
+
+          <aside class="directory panel" aria-labelledby="directoryHeading">
+            <div class="directory-header">
+              <div>
+                <p class="eyebrow">CHANNEL DIRECTORY</p>
+                <h2 id="directoryHeading">All channels</h2>
+              </div>
+              <button class="icon-button" id="reloadButton" type="button" title="Reload current playlist" aria-label="Reload current playlist">↻</button>
+            </div>
+            <div class="search-box">
+              <span aria-hidden="true">⌕</span>
+              <label class="sr-only" for="searchInput">Search channels</label>
+              <input id="searchInput" type="search" placeholder="Search channels, groups…" autocomplete="off">
+              <button id="clearSearch" type="button" aria-label="Clear search" hidden>×</button>
+            </div>
+            <div class="filter-tabs" role="tablist" aria-label="Channel views">
+              <button class="filter-tab active" data-view="all" role="tab" aria-selected="true" type="button">All <span>0</span></button>
+              <button class="filter-tab" data-view="favorites" role="tab" aria-selected="false" type="button">★ <span>0</span></button>
+              <button class="filter-tab" data-view="recent" role="tab" aria-selected="false" type="button">Recent</button>
+            </div>
+            <div class="group-select-wrap">
+              <label class="sr-only" for="groupSelect">Filter by group</label>
+              <select id="groupSelect">
+                <option value="all">All groups</option>
+              </select>
+            </div>
+            <div class="directory-summary">
+              <span id="directorySummary">No channels loaded</span>
+              <span id="directoryStats"></span>
+            </div>
+            <div class="channel-list" id="channelList" role="list">
+              <div class="list-placeholder">
+                <span class="placeholder-icon">⌁</span>
+                <p>Loading your channel directory…</p>
+              </div>
+            </div>
+            <button class="load-more" id="loadMoreButton" type="button" hidden>Show more channels</button>
+          </aside>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="aboutDialog" class="about-dialog">
+      <button class="dialog-close" id="closeAbout" type="button" aria-label="Close">×</button>
+      <p class="eyebrow">ABOUT STREAMDECK</p>
+      <h2>Browser-first IPTV playback</h2>
+      <p>Built for static hosting such as GitHub Pages. It parses M3U playlists in your browser and uses native HTML5 video or hls.js where available.</p>
+      <p class="muted">VLC can open protocols and codecs that browsers cannot. A failed browser playback attempt is usually a provider, CORS, protocol, or codec limitation—not a playlist parsing failure.</p>
+      <button class="button button-primary" id="closeAboutButton" type="button">Close</button>
+    </dialog>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js" defer></script>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

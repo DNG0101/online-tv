@@ -1,0 +1,11 @@
+{
+  "name": "streamdeck-iptv",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/app.test.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
